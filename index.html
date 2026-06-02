@@ -179,32 +179,13 @@
     </div>
 </div>
 
-<script id="coreApplicationScript">
-    const URL_API = "https://script.google.com/macros/s/AKfycbygqT6eja5G-uNleyCkOq__ZereID8lmkG0FZ7jRc2D2ClubTKSHiYj6CEKZjDrciWcfA/exec";
-    
-    // =========================================================================
-    // KUNCI UTAMA (Harus 100% sama dengan variabel KATA_KUNCI_UTAMA di App Script)
-    // =========================================================================
-    const KUNCI_DASAR = "MV2026!!";
+<script>
+    const URL_API = "https://script.google.com/macros/s/AKfycbwvOW5uX7Ig77L9jjbmgmU7sVzBuKIUsG8bWixP6iHh4ttagQIrXl3K17bLJa30ZnduRQ/exec";
 
     let databaseBarang = [];
     let databaseSO = [];
     let userAktif = null;
     let indeksBaris = 0;
-
-    // Fungsi membuat Token Harian di Sisi Web (Mengunci paksa format WIB Jakarta)
-    function ambilTokenHarianWeb() {
-        const d = new Date();
-        const jakartaString = d.toLocaleString("en-US", { timeZone: "Asia/Jakarta" });
-        const jakartaDate = new Date(jakartaString);
-        
-        const dd = String(jakartaDate.getDate()).padStart(2, '0');
-        const mm = String(jakartaDate.getMonth() + 1).padStart(2, '0');
-        const yyyy = jakartaDate.getFullYear();
-        
-        const stringGabung = KUNCI_DASAR + "-" + dd + mm + yyyy;
-        return btoa(stringGabung); // Mengubah teks ke format Base64
-    }
 
     window.addEventListener('DOMContentLoaded', async () => {
         await muatUlangSO();
@@ -227,8 +208,7 @@
 
     async function muatUlangSO() {
         try {
-            let token = ambilTokenHarianWeb();
-            let res = await fetch(`${URL_API}?target=lokasi&tokenApp=${token}`);
+            let res = await fetch(`${URL_API}?target=lokasi`);
             let txt = await res.text();
             databaseSO = JSON.parse(txt);
         } catch(e) { console.error("Gagal sinkronisasi data SO:", e); }
@@ -278,10 +258,9 @@
 
         toggleLoader(true);
         try {
-            let token = ambilTokenHarianWeb();
             let res = await fetch(URL_API, {
                 method: "POST",
-                body: JSON.stringify({ tokenApp: token, fitur: "SIGN_UP", nama, lokasi: validSO, email, sandi })
+                body: JSON.stringify({ fitur: "SIGN_UP", nama, lokasi: validSO, email, sandi })
             });
             let data = await res.json();
             if(data.status === "SUCCESS") {
@@ -299,10 +278,9 @@
 
         toggleLoader(true);
         try {
-            let token = ambilTokenHarianWeb();
             let res = await fetch(URL_API, {
                 method: "POST",
-                body: JSON.stringify({ tokenApp: token, fitur: "LOGIN", email, sandi })
+                body: JSON.stringify({ fitur: "LOGIN", email, sandi })
             });
             let data = await res.json();
             
@@ -320,14 +298,13 @@
                 
                 pindahPage('pageUtama');
             } else { alert(data.message); }
-        } catch(e) { alert("Email atau Sandi salah / Token otentikasi tidak valid."); }
+        } catch(e) { alert("Email atau Sandi salah / Data akun belum tersinkronisasi sempurna."); }
         toggleLoader(false);
     }
 
     async function muatDataBarang() {
         try {
-            let token = ambilTokenHarianWeb();
-            let res = await fetch(`${URL_API}?target=barang&tokenApp=${token}`);
+            let res = await fetch(`${URL_API}?target=barang`);
             let txt = await res.text();
             databaseBarang = JSON.parse(txt);
         } catch(e) { console.error("Gagal unduh data barang", e); }
@@ -435,9 +412,7 @@
         }
 
         toggleLoader(true);
-        let token = ambilTokenHarianWeb();
         let payload = {
-            tokenApp: token,
             fitur: "INPUT_LOG",
             namaKaryawan: namaKaryawan,
             lokasiSO: userAktif.lokasi,
