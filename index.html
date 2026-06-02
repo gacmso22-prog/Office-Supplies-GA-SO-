@@ -123,10 +123,6 @@
             Akun Login: <strong id="bannerEmail">-</strong> | Lokasi Pusat: <strong id="bannerLokasi">-</strong>
         </div>
         
-        <div>
-            <div id="hitungItemBadge" class="badge-counter">Jumlah Item: 1 / Max 10 Items</div>
-        </div>
-        
         <div class="form-group">
             <label>Nama Karyawan Yang Mengambil</label>
             <input type="text" id="formNama" placeholder="Ketik nama karyawan pengguna barang...">
@@ -138,7 +134,11 @@
         </div>
 
         <h3 style="margin-top: 25px; margin-bottom: 10px; font-size: 16px; color:#333;">Daftar Item ATK / Supplies:</h3>
-        <button type="button" class="btn-add-row" onclick="tambahBarisTabel()">+ Tambah Baris Item</button>
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <button type="button" class="btn-add-row" onclick="tambahBarisTabel()" style="margin-bottom: 0; width: auto;">+ Tambah Baris Item</button>
+            <div id="hitungItemBadge" class="badge-counter" style="margin-bottom: 0;">Jumlah Item: 1 / Max 10 Items</div>
+        </div>
+
         
         <div class="table-responsive">
             <table id="tabelAtk">
