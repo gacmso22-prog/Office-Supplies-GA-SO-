@@ -20,20 +20,21 @@
         button:hover { background: #0056b3; }
         .link-btn { text-align: center; margin-top: 15px; font-size: 14px; color: #007bff; cursor: pointer; text-decoration: underline; }
         
+        /* FIX AUTOCOMPLETE AGAR MUNCUL DI ATAS TABEL DAN TIDAK SEMBUNYI */
         .autocomplete-suggestions { 
-            position: absolute; 
-            top: 100%;
-            left: 0;
-            border: 2px solid #007bff; 
-            background: white; 
-            width: 100%; 
+            position: absolute !important; 
+            top: 100% !important;
+            left: 0 !important;
+            border: 2px solid #007bff !important; 
+            background: white !important; 
+            width: 100% !important; 
             min-width: 280px; 
-            z-index: 999999 !important; 
-            max-height: 280px; 
-            overflow-y: auto; 
+            z-index: 9999999 !important; /* Diperkuat agar menang bertumpuk */
+            max-height: 220px; 
+            overflow-y: auto !important; 
             display: none; 
             border-radius: 6px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.25); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
             -webkit-overflow-scrolling: touch; 
         }
         .suggestion-item { 
@@ -43,8 +44,10 @@
             text-align: left; 
             font-size: 14px; 
             line-height: 1.4;
+            color: #333;
         }
-        .suggestion-item:hover { background: #007bff; color: white; }
+        .suggestion-item:hover { background: #007bff; color: white !important; }
+        .suggestion-item:hover small { color: #fff !important; } /* Supaya teks kecil ikut putih saat di-hover */
         .suggestion-item:last-child { border-bottom: none; }
         
         .user-info-banner { background: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; text-align: center; font-weight: 500; }
@@ -52,10 +55,11 @@
         /* INFO COUNTER MAX ITEM */
         .limit-info { font-size: 13px; font-weight: bold; color: #dc3545; margin-bottom: 8px; display: inline-block; background: #ffeecf; padding: 4px 10px; border-radius: 4px; border: 1px solid #ffc107; }
 
+        /* FIX OVERFLOW PADA PEMBUNGKUS TABEL */
         .table-responsive { 
             width: 100%; 
-            overflow-x: visible; 
-            overflow-y: visible; 
+            overflow-x: visible !important; 
+            overflow-y: visible !important; 
             margin-bottom: 35px; 
         }
         table { width: 100%; border-collapse: collapse; overflow: visible !important; }
@@ -295,7 +299,6 @@
                 document.getElementById('bannerLokasi').innerText = userAktif.lokasi;
                 document.getElementById('formTanggal').valueAsDate = new Date();
                 
-                // UPDATE: Kirim lokasi bersama token saat muat data barang
                 await muatDataBarang();
                 
                 document.getElementById('bodyTabelAtk').innerHTML = "";
@@ -311,7 +314,6 @@
         try {
             let tokenSesi = userAktif ? userAktif.token : "";
             let lokasiSesi = userAktif ? userAktif.lokasi : ""; 
-            // Amankan request GET bawa Token + Lokasi SO
             let res = await fetch(`${URL_API}?target=barang&token=${tokenSesi}&lokasi=${encodeURIComponent(lokasiSesi)}`);
             let txt = await res.text();
             
@@ -323,10 +325,10 @@
             }
             
             databaseBarang = JSON.parse(txt);
+            console.log("Data barang berhasil dimuat. Total item: " + databaseBarang.length);
         } catch(e) { console.error("Gagal unduh data barang", e); }
     }
 
-    // UPDATE UI COUNTER BARANG
     function updateCounterItem() {
         const tbody = document.getElementById('bodyTabelAtk');
         const jumlahBaris = tbody.rows.length;
@@ -350,9 +352,9 @@
         }
     }
 
+    /* FIX: MEMAKSA STRUKTUR COLOM (TD) DAN BARIS (TR) MEMILIKI OVERFLOW VISIBLE AGAR DROPDOWN SUGGESTIONS KELUAR */
     function tambahBarisTabel() {
         const tbody = document.getElementById('bodyTabelAtk');
-        // Kunci lapis pertama di browser: Jangan boleh tambah kalau udah 10
         if (tbody.rows.length >= 10) {
             alert("Maksimal penginputan adalah 10 barang per nota, bro!");
             return;
@@ -364,21 +366,21 @@
         tr.style.overflow = "visible";
         
         tr.innerHTML = `
-            <td style="position: relative; overflow: visible;">
+            <td style="position: relative !important; overflow: visible !important;">
                 <input type="text" id="namaBarang_${indeksBaris}" oninput="cariBarangTabel(${indeksBaris}, this.value)" placeholder="Ketik nama item..." autocomplete="off">
                 <div id="suggest_${indeksBaris}" class="autocomplete-suggestions"></div>
             </td>
-            <td>
+            <td style="overflow: visible !important;">
                 <input type="text" id="kategori_${indeksBaris}" class="readonly-bg" readonly placeholder="Kategori">
                 <input type="hidden" id="kode_${indeksBaris}">
             </td>
-            <td>
+            <td style="overflow: visible !important;">
                 <input type="number" id="qty_${indeksBaris}" min="1" value="1">
             </td>
-            <td>
+            <td style="overflow: visible !important;">
                 <input type="text" id="satuan_${indeksBaris}" class="readonly-bg" readonly placeholder="Satuan">
             </td>
-            <td>
+            <td style="overflow: visible !important;">
                 <button type="button" class="btn-del" onclick="hapusBarisTabel(${indeksBaris})">Hapus</button>
             </td>
         `;
@@ -430,7 +432,6 @@
         if(!namaKaryawan) return alert("Harap isi nama karyawan yang mengambil barang!");
         if(!tanggal) return alert("Harap tentukan tanggal pengambilan!");
 
-        // Validasi Sisi Browser Sebelum Kirim ke Server
         if (tbody.rows.length > 10) {
             return alert("Pengiriman gagal! Isian barang di tabel melebihi batas maksimal 10 items.");
         }
@@ -471,7 +472,7 @@
             fitur: "INPUT_LOG",
             token: tokenSesi, 
             namaKaryawan: namaKaryawan,
-            lokasiSO: userAktif.lokasi, // Kirim lokasi SO asli user untuk divalidasi server
+            lokasiSO: userAktif.lokasi,
             tanggal: tanggal,
             alasan: alasan,
             items: kumpulanItem
