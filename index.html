@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supplies Office System</title>
-    <style>
+<style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; padding: 20px; color: #333; }
         .container { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; transition: max-width 0.3s ease; }
         .wide-container { max-width: 850px; }
@@ -49,13 +49,26 @@
         .suggestion-item:last-child { border-bottom: none; }
         
         .user-info-banner { background: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; text-align: center; font-weight: 500; }
-        .badge-counter { background: #fff3cd; color: #856404; padding: 5px 10px; border-radius: 5px; font-size: 14px; display: inline-block; font-weight: bold; margin-bottom: 10px; border: 1px solid #ffeeba; }
+        
+        /* CSS Badge Counter disesuaikan tingginya dengan tombol */
+        .badge-counter { 
+            background: #fff3cd; 
+            color: #856404; 
+            padding: 8px 12px; 
+            border-radius: 5px; 
+            font-size: 14px; 
+            display: inline-flex; 
+            align-items: center;
+            font-weight: bold; 
+            margin-bottom: 0; 
+            border: 1px solid #ffeeba; 
+        }
         
         .table-responsive { width: 100%; overflow-x: visible; overflow-y: visible; margin-bottom: 35px; }
         table { width: 100%; border-collapse: collapse; overflow: visible !important; }
         th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; font-size: 14px; }
         th { background-color: #f8f9fa; color: #333; }
-        .btn-add-row { background: #28a745; margin-bottom: 15px; width: auto; padding: 8px 15px; font-size: 14px; }
+        .btn-add-row { background: #28a745; margin-bottom: 0; width: auto; padding: 8px 15px; font-size: 14px; }
         .btn-add-row:hover { background: #218838; }
         .btn-del { background: #dc3545; padding: 6px 10px; font-size: 12px; margin-top: 0; width: auto; }
         .btn-del:hover { background: #bd2130; }
@@ -70,6 +83,75 @@
         .success-text { font-size: 15px; color: #555; margin-bottom: 25px; line-height: 1.5; }
         .btn-success-back { background: #28a745; }
         .btn-success-back:hover { background: #218838; }
+
+        /* ==========================================================================
+           💥 CSS RESPONSIVE KHUSUS LAYAR HP (OTOMATIS AKTIF DI BAWAH LEBAR 768px)
+           ========================================================================== */
+        @media screen and (max-width: 768px) {
+            body { padding: 10px; }
+            .container, .wide-container { max-width: 100% !important; padding: 15px; margin: 10px auto; }
+            
+            /* Sembunyikan kepala tabel asli PC agar tidak merusak baris HP */
+            table#tabelAtk thead { display: none !important; }
+            
+            /* Ubah susunan baris tr menjadi satu kotak kartu/card mandiri */
+            #bodyTabelAtk tr {
+                display: block !important;
+                background: #ffffff;
+                border: 2px solid #dee2e6;
+                border-radius: 8px;
+                padding: 12px;
+                margin-bottom: 15px;
+                position: relative;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            }
+            
+            /* Paksa semua kolom (td) turun ke bawah dan melebar penuh */
+            #bodyTabelAtk td {
+                display: block !important;
+                width: 100% !important;
+                padding: 6px 0 !important;
+                border: none !important;
+                box-sizing: border-box;
+            }
+
+            /* Membuat judul penanda otomatis di atas tiap kolom input khusus di HP */
+            #bodyTabelAtk td:nth-child(1)::before { content: "Nama Barang:"; font-weight: bold; font-size: 13px; display: block; margin-bottom: 4px; color: #495057; }
+            #bodyTabelAtk td:nth-child(2)::before { content: "Kategori / Kode:"; font-weight: bold; font-size: 13px; display: block; margin-bottom: 4px; color: #495057; }
+            #bodyTabelAtk td:nth-child(3)::before { content: "Jumlah (Qty):"; font-weight: bold; font-size: 13px; display: block; margin-bottom: 4px; color: #495057; }
+            #bodyTabelAtk td:nth-child(4)::before { content: "Satuan:"; font-weight: bold; font-size: 13px; display: block; margin-bottom: 4px; color: #495057; }
+
+            /* Pastikan kotak inputan menjadi luas dan teks di dalamnya tidak terpotong */
+            #bodyTabelAtk td input {
+                width: 100% !important;
+                padding: 10px !important;
+                font-size: 14px !important;
+            }
+
+            /* Merapikan kolom ke-5 (Tombol Hapus) di posisi bawah kartu */
+            #bodyTabelAtk td:nth-child(5) {
+                text-align: right;
+                margin-top: 8px;
+                border-top: 1px dashed #ddd !important;
+                padding-top: 10px !important;
+            }
+            .btn-del { width: 100% !important; padding: 10px !important; font-size: 14px !important; }
+            
+            /* Dropdown rekomendasi otomatis melebar penuh mengikuti kolom nama barang di HP */
+            .autocomplete-suggestions {
+                width: 100% !important;
+                min-width: 100% !important;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            }
+            
+            /* Pengaman pembungkus Tombol Tambah & Kotak Jumlah Item agar bertumpuk rapi di HP */
+            div[style*="display: flex"] {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 10px !important;
+            }
+            .btn-add-row, .badge-counter { width: 100% !important; text-align: center; justify-content: center; }
+        }
     </style>
 </head>
 <body>
