@@ -180,7 +180,7 @@
 </div>
 
 <script>
-    const URL_API = "https://script.google.com/macros/s/AKfycbwk7F3P5xami-lrCr64_NG4Oxel6pVJFoPRFHAU6uYTW9ph-N38OyoZ7x-wx8EXJ9kZVg/exec";
+    const URL_API = "https://script.google.com/macros/s/AKfycbyBWMLA2DSFjk2GEf5kGnvYat3Y0oRd3bD0eM1P_NTyuS_3y3eYx83oBff0OfiitIrnLg/exec";
 
     let databaseBarang = [];
     let databaseSO = [];
@@ -291,6 +291,7 @@
                 document.getElementById('bannerLokasi').innerText = userAktif.lokasi;
                 document.getElementById('formTanggal').valueAsDate = new Date();
                 
+                // DATA BARANG DI-FETCH SETELAH LOGIN BERHASIL DAN MEMBAWA TOKEN
                 await muatDataBarang();
                 
                 document.getElementById('bodyTabelAtk').innerHTML = "";
@@ -302,10 +303,20 @@
         toggleLoader(false);
     }
 
+    // UPDATE: Mengamankan fetch data barang dengan token sesi di URL parameter
     async function muatDataBarang() {
         try {
-            let res = await fetch(`${URL_API}?target=barang`);
+            let tokenSesi = userAktif ? userAktif.token : "";
+            let res = await fetch(`${URL_API}?target=barang&token=${tokenSesi}`);
             let txt = await res.text();
+            
+            if(txt.includes("Akses Ditolak")) {
+                let errData = JSON.parse(txt);
+                alert(errData.message);
+                logout();
+                return;
+            }
+            
             databaseBarang = JSON.parse(txt);
         } catch(e) { console.error("Gagal unduh data barang", e); }
     }
@@ -412,8 +423,12 @@
         }
 
         toggleLoader(true);
+        
+        // UPDATE: Ditambahkan payload tokenSesi biar backend bisa memverifikasi legalitas input data log
+        let tokenSesi = userAktif ? userAktif.token : "";
         let payload = {
             fitur: "INPUT_LOG",
+            token: tokenSesi, 
             namaKaryawan: namaKaryawan,
             lokasiSO: userAktif.lokasi,
             tanggal: tanggal,
