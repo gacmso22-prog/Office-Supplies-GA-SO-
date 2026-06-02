@@ -194,6 +194,7 @@
     let databaseSO = [];
     let userAktif = null;
     let indeksBaris = 0;
+    const MAX_ITEMS = 10;
 
     window.addEventListener('DOMContentLoaded', async () => {
         await muatUlangSO();
@@ -312,51 +313,30 @@
 
     async function muatDataBarang() {
         try {
-            let tokenSesi = userAktif ? userAktif.token : "";
-            let lokasiSesi = userAktif ? userAktif.lokasi : ""; 
-            let res = await fetch(`${URL_API}?target=barang&token=${tokenSesi}&lokasi=${encodeURIComponent(lokasiSesi)}`);
+            let res = await fetch(`${URL_API}?target=barang`);
             let txt = await res.text();
-            
-            if(txt.includes("Akses Ditolak")) {
-                let errData = JSON.parse(txt);
-                alert(errData.message);
-                logout();
-                return;
-            }
-            
             databaseBarang = JSON.parse(txt);
-            console.log("Data barang berhasil dimuat. Total item: " + databaseBarang.length);
+            console.log("Data barang loaded. Total item:", databaseBarang.length);
         } catch(e) { console.error("Gagal unduh data barang", e); }
     }
 
-    function updateCounterItem() {
+    function perbaruiCounterTabel() {
         const tbody = document.getElementById('bodyTabelAtk');
         const jumlahBaris = tbody.rows.length;
-        const txtCounter = document.getElementById('txtCounterItem');
+        document.getElementById('txtCounterItem').innerText = `Jumlah Item: ${jumlahBaris} / Max ${MAX_ITEMS} Items`;
+        
         const btnTambah = document.getElementById('btnTambahItem');
-        
-        txtCounter.innerText = `Jumlah Item: ${jumlahBaris} / Max 10 Items`;
-        
-        if (jumlahBaris >= 10) {
-            btnTambah.disabled = true;
-            btnTambah.style.background = "#6c757d";
-            btnTambah.style.cursor = "not-allowed";
-            txtCounter.style.background = "#f8d7da";
-            txtCounter.style.color = "#721c24";
+        if (jumlahBaris >= MAX_ITEMS) {
+            btnTambah.style.display = "none";
         } else {
-            btnTambah.disabled = false;
-            btnTambah.style.background = "#28a745";
-            btnTambah.style.cursor = "pointer";
-            txtCounter.style.background = "#ffeecf";
-            txtCounter.style.color = "#dc3545";
+            btnTambah.style.display = "flex";
         }
     }
 
-    /* FIX: MEMAKSA STRUKTUR COLOM (TD) DAN BARIS (TR) MEMILIKI OVERFLOW VISIBLE AGAR DROPDOWN SUGGESTIONS KELUAR */
     function tambahBarisTabel() {
         const tbody = document.getElementById('bodyTabelAtk');
-        if (tbody.rows.length >= 10) {
-            alert("Maksimal penginputan adalah 10 barang per nota, bro!");
+        if (tbody.rows.length >= MAX_ITEMS) {
+            alert(`Maksimal hanya boleh mencantumkan ${MAX_ITEMS} item dalam satu form!`);
             return;
         }
 
@@ -366,26 +346,26 @@
         tr.style.overflow = "visible";
         
         tr.innerHTML = `
-            <td style="position: relative !important; overflow: visible !important;">
+            <td style="position: relative; overflow: visible;">
                 <input type="text" id="namaBarang_${indeksBaris}" oninput="cariBarangTabel(${indeksBaris}, this.value)" placeholder="Ketik nama item..." autocomplete="off">
                 <div id="suggest_${indeksBaris}" class="autocomplete-suggestions"></div>
             </td>
-            <td style="overflow: visible !important;">
+            <td>
                 <input type="text" id="kategori_${indeksBaris}" class="readonly-bg" readonly placeholder="Kategori">
                 <input type="hidden" id="kode_${indeksBaris}">
             </td>
-            <td style="overflow: visible !important;">
+            <td>
                 <input type="number" id="qty_${indeksBaris}" min="1" value="1">
             </td>
-            <td style="overflow: visible !important;">
+            <td>
                 <input type="text" id="satuan_${indeksBaris}" class="readonly-bg" readonly placeholder="Satuan">
             </td>
-            <td style="overflow: visible !important;">
+            <td>
                 <button type="button" class="btn-del" onclick="hapusBarisTabel(${indeksBaris})">Hapus</button>
             </td>
         `;
         tbody.appendChild(tr);
-        updateCounterItem();
+        perbaruiCounterTabel();
     }
 
     function hapusBarisTabel(id) {
@@ -396,7 +376,7 @@
         }
         const row = document.getElementById(`row_${id}`);
         if(row) row.remove();
-        updateCounterItem();
+        perbaruiCounterTabel();
     }
 
     function cariBarangTabel(id, val) {
@@ -404,18 +384,21 @@
         div.innerHTML = "";
         if (!val.trim()) { div.style.display = "none"; return; }
 
-        let hasil = databaseBarang.filter(item => item["Nama Item"] && item["Nama Item"].toLowerCase().includes(val.toLowerCase()));
+        // Filter data berdasarkan 'Nama Item'
+        let hasil = databaseBarang.filter(item => item && item["Nama Item"] && item["Nama Item"].toLowerCase().includes(val.toLowerCase()));
+        
         if (hasil.length > 0) {
             div.style.display = "block";
-            hasil.slice(0, 20).forEach(item => {
+            hasil.slice(0, 15).forEach(item => {
                 let divItem = document.createElement('div');
                 divItem.className = 'suggestion-item';
-                divItem.innerHTML = `<strong>${item["Nama Item"]}</strong> <br><small style='color:#007bff; font-weight:bold;'>Kode: ${item["Asset Code"]}</small> <small style='color:#666;'>(${item["Unit"]})</small>`;
+                divItem.innerHTML = `<strong>${item["Nama Item"]}</strong> <br><small style='color:#007bff; font-weight:bold;'>Kode: ${item["Asset Code"] || '-'}</small> <small style='color:#666;'>(${item["Unit"] || '-'})</small>`;
+                
                 divItem.onclick = () => {
                     document.getElementById(`namaBarang_${id}`).value = item["Nama Item"];
-                    document.getElementById(`kategori_${id}`).value = item["Asset Code"];
-                    document.getElementById(`kode_${id}`).value = item["Kode Item"];
-                    document.getElementById(`satuan_${id}`).value = item["Unit"];
+                    document.getElementById(`kategori_${id}`).value = item["Asset Code"] || "";
+                    document.getElementById(`kode_${id}`).value = item["Kode Item"] || "";
+                    document.getElementById(`satuan_${id}`).value = item["Unit"] || "";
                     div.style.display = "none";
                 };
                 div.appendChild(divItem);
@@ -431,10 +414,6 @@
 
         if(!namaKaryawan) return alert("Harap isi nama karyawan yang mengambil barang!");
         if(!tanggal) return alert("Harap tentukan tanggal pengambilan!");
-
-        if (tbody.rows.length > 10) {
-            return alert("Pengiriman gagal! Isian barang di tabel melebihi batas maksimal 10 items.");
-        }
 
         let kumpulanItem = [];
         let barisValid = true;
@@ -466,11 +445,8 @@
         }
 
         toggleLoader(true);
-        
-        let tokenSesi = userAktif ? userAktif.token : "";
         let payload = {
             fitur: "INPUT_LOG",
-            token: tokenSesi, 
             namaKaryawan: namaKaryawan,
             lokasiSO: userAktif.lokasi,
             tanggal: tanggal,
