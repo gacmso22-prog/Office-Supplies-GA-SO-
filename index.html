@@ -20,7 +20,6 @@
         button:hover { background: #0056b3; }
         .link-btn { text-align: center; margin-top: 15px; font-size: 14px; color: #007bff; cursor: pointer; text-decoration: underline; }
         
-        /* FIX TOTAL: DROP-DOWN MELAYANG BEBAS KELUAR TABEL */
         .autocomplete-suggestions { 
             position: absolute; 
             top: 100%;
@@ -50,17 +49,19 @@
         
         .user-info-banner { background: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; text-align: center; font-weight: 500; }
         
-        /* PERBAIKAN STRUKTUR AREA TABEL AGAR MELEBAR KE BAWAH */
+        /* INFO COUNTER MAX ITEM */
+        .limit-info { font-size: 13px; font-weight: bold; color: #dc3545; margin-bottom: 8px; display: inline-block; background: #ffeecf; padding: 4px 10px; border-radius: 4px; border: 1px solid #ffc107; }
+
         .table-responsive { 
             width: 100%; 
             overflow-x: visible; 
             overflow-y: visible; 
-            margin-bottom: 35px; /* Memberi ruang luas untuk drop-down baris terakhir */
+            margin-bottom: 35px; 
         }
         table { width: 100%; border-collapse: collapse; overflow: visible !important; }
         th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; font-size: 14px; }
         th { background-color: #f8f9fa; color: #333; }
-        .btn-add-row { background: #28a745; margin-bottom: 15px; width: auto; padding: 8px 15px; font-size: 14px; }
+        .btn-add-row { background: #28a745; margin-bottom: 15px; width: auto; padding: 8px 15px; font-size: 14px; display: flex; align-items: center; gap: 5px; }
         .btn-add-row:hover { background: #218838; }
         .btn-del { background: #dc3545; padding: 6px 10px; font-size: 12px; margin-top: 0; width: auto; }
         .btn-del:hover { background: #bd2130; }
@@ -139,8 +140,11 @@
             <input type="date" id="formTanggal">
         </div>
 
-        <h3 style="margin-top: 25px; margin-bottom: 10px; font-size: 16px; color:#333;">Daftar Item ATK / Supplies:</h3>
-        <button type="button" class="btn-add-row" onclick="tambahBarisTabel()">+ Tambah Baris Item</button>
+        <h3 style="margin-top: 25px; margin-bottom: 5px; font-size: 16px; color:#333;">Daftar Item ATK / Supplies:</h3>
+        
+        <div class="limit-info" id="txtCounterItem">Jumlah Item: 1 / Max 10 Items</div>
+        
+        <button type="button" id="btnTambahItem" class="btn-add-row" onclick="tambahBarisTabel()">+ Tambah Baris Item</button>
         
         <div class="table-responsive">
             <table id="tabelAtk">
@@ -180,7 +184,7 @@
 </div>
 
 <script>
-    const URL_API = "https://script.google.com/macros/s/AKfycbzBxi3p2NVat6P_2Hq1sfwGELm_l8J5R8jrBlY3y8jUVRPgLdoa38YCDov0ljGAT9JTuQ/exec";
+    const URL_API = "https://script.google.com/macros/s/AKfycby2PbPj1YVXkTZgjddRhXMTa_VNezN5qY8A8n46KR1vB__pxG8xPFHSENhDbVRQWpCXxA/exec";
 
     let databaseBarang = [];
     let databaseSO = [];
@@ -291,7 +295,7 @@
                 document.getElementById('bannerLokasi').innerText = userAktif.lokasi;
                 document.getElementById('formTanggal').valueAsDate = new Date();
                 
-                // DATA BARANG DI-FETCH SETELAH LOGIN BERHASIL DAN MEMBAWA TOKEN
+                // UPDATE: Kirim lokasi bersama token saat muat data barang
                 await muatDataBarang();
                 
                 document.getElementById('bodyTabelAtk').innerHTML = "";
@@ -303,11 +307,12 @@
         toggleLoader(false);
     }
 
-    // UPDATE: Mengamankan fetch data barang dengan token sesi di URL parameter
     async function muatDataBarang() {
         try {
             let tokenSesi = userAktif ? userAktif.token : "";
-            let res = await fetch(`${URL_API}?target=barang&token=${tokenSesi}`);
+            let lokasiSesi = userAktif ? userAktif.lokasi : ""; 
+            // Amankan request GET bawa Token + Lokasi SO
+            let res = await fetch(`${URL_API}?target=barang&token=${tokenSesi}&lokasi=${encodeURIComponent(lokasiSesi)}`);
             let txt = await res.text();
             
             if(txt.includes("Akses Ditolak")) {
@@ -321,9 +326,39 @@
         } catch(e) { console.error("Gagal unduh data barang", e); }
     }
 
-    function tambahBarisTabel() {
-        indeksBaris++;
+    // UPDATE UI COUNTER BARANG
+    function updateCounterItem() {
         const tbody = document.getElementById('bodyTabelAtk');
+        const jumlahBaris = tbody.rows.length;
+        const txtCounter = document.getElementById('txtCounterItem');
+        const btnTambah = document.getElementById('btnTambahItem');
+        
+        txtCounter.innerText = `Jumlah Item: ${jumlahBaris} / Max 10 Items`;
+        
+        if (jumlahBaris >= 10) {
+            btnTambah.disabled = true;
+            btnTambah.style.background = "#6c757d";
+            btnTambah.style.cursor = "not-allowed";
+            txtCounter.style.background = "#f8d7da";
+            txtCounter.style.color = "#721c24";
+        } else {
+            btnTambah.disabled = false;
+            btnTambah.style.background = "#28a745";
+            btnTambah.style.cursor = "pointer";
+            txtCounter.style.background = "#ffeecf";
+            txtCounter.style.color = "#dc3545";
+        }
+    }
+
+    function tambahBarisTabel() {
+        const tbody = document.getElementById('bodyTabelAtk');
+        // Kunci lapis pertama di browser: Jangan boleh tambah kalau udah 10
+        if (tbody.rows.length >= 10) {
+            alert("Maksimal penginputan adalah 10 barang per nota, bro!");
+            return;
+        }
+
+        indeksBaris++;
         const tr = document.createElement('tr');
         tr.id = `row_${indeksBaris}`;
         tr.style.overflow = "visible";
@@ -348,6 +383,7 @@
             </td>
         `;
         tbody.appendChild(tr);
+        updateCounterItem();
     }
 
     function hapusBarisTabel(id) {
@@ -358,6 +394,7 @@
         }
         const row = document.getElementById(`row_${id}`);
         if(row) row.remove();
+        updateCounterItem();
     }
 
     function cariBarangTabel(id, val) {
@@ -393,6 +430,11 @@
         if(!namaKaryawan) return alert("Harap isi nama karyawan yang mengambil barang!");
         if(!tanggal) return alert("Harap tentukan tanggal pengambilan!");
 
+        // Validasi Sisi Browser Sebelum Kirim ke Server
+        if (tbody.rows.length > 10) {
+            return alert("Pengiriman gagal! Isian barang di tabel melebihi batas maksimal 10 items.");
+        }
+
         let kumpulanItem = [];
         let barisValid = true;
 
@@ -424,13 +466,12 @@
 
         toggleLoader(true);
         
-        // UPDATE: Ditambahkan payload tokenSesi biar backend bisa memverifikasi legalitas input data log
         let tokenSesi = userAktif ? userAktif.token : "";
         let payload = {
             fitur: "INPUT_LOG",
             token: tokenSesi, 
             namaKaryawan: namaKaryawan,
-            lokasiSO: userAktif.lokasi,
+            lokasiSO: userAktif.lokasi, // Kirim lokasi SO asli user untuk divalidasi server
             tanggal: tanggal,
             alasan: alasan,
             items: kumpulanItem
