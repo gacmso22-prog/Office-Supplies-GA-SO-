@@ -442,7 +442,7 @@
         perbaruiCounterBaris();
     }
 
-    // FIX TOTAL: Pendeteksi Format Pintar (Object lama vs Enkripsi baru)
+    // FIX TOTAL: Memastikan teks gabungan Kategori dan Kode Barang muncul di input web
     function cariBarangTabel(id, val) {
         let div = document.getElementById(`suggest_${id}`);
         div.innerHTML = "";
@@ -466,29 +466,46 @@
 
                 if (Array.isArray(item)) {
                     namaTampil = item[0] || "-";
-                    kodeTampil = item[1] || "-";
-                    kodeItemAsli = item[2] || "";
+                    kodeTampil = item[1] || "-"; // Ini yang memuat "Stationery"
+                    // Ambil index 2, kalau kosong cari di index lainnya (antisipasi pergeseran array)
+                    kodeItemAsli = item[2] || item[4] || item[5] || ""; 
                     unitTampil = item[3] || "-";
                 } else {
-                    namaTampil = item["Nama Item"] || "-";
-                    kodeTampil = item["Asset Code"] || "-";
-                    kodeItemAsli = item["Kode Item"] || "";
-                    unitTampil = item["Unit"] || "-";
+                    namaTampil = item["Nama Item"] || item["Nama Barang"] || "-";
+                    kodeTampil = item["Asset Code"] || item["Kategori"] || item["kategori"] || "-";
+                    // Antisipasi perbedaan key nama properti objek dari Apps Script lo
+                    kodeItemAsli = item["Kode Item"] || item["Kode Barang"] || item["kode"] || "";
+                    unitTampil = item["Unit"] || item["Satuan"] || "-";
                 }
 
                 let divItem = document.createElement('div');
                 divItem.className = 'suggestion-item';
-                divItem.innerHTML = `<strong>${namaTampil}</strong> <br><small style='color:#007bff; font-weight:bold;'>Asset: ${kodeTampil} | KB: ${kodeItemAsli}</small> <small style='color:#666;'>(${unitTampil})</small>`;
+                
+                // Tampilan di dalam list dropdown melayang
+                divItem.innerHTML = `<strong>${namaTampil}</strong> <br><small style='color:#007bff; font-weight:bold;'>Asset: ${kodeTampil} | KB: ${kodeItemAsli || '-'}</small> <small style='color:#666;'>(${unitTampil})</small>`;
                 
                 divItem.onclick = () => {
                     document.getElementById(`namaBarang_${id}`).value = namaTampil;
-                    if (kodeItemAsli && kodeItemAsli !== "-") {
+                    
+                    // 🔥 SOLUSI UTAMA: Gabungkan secara paksa teks Kategori dan Kodenya
+                    // Jika kodeItemAsli terdeteksi ada isinya dan bukan cuma strip
+                    if (kodeItemAsli && kodeItemAsli !== "-" && kodeItemAsli !== "") {
                         document.getElementById(`kategori_${id}`).value = `${kodeTampil} / ${kodeItemAsli}`;
                     } else {
-                        document.getElementById(`kategori_${id}`).value = kodeTampil;
+                        // Backup plan: Kalau kodeItemAsli msh zonk, kita coba cek apakah ada data murni lain di data item
+                        let cadanganKode = (typeof item === 'object' && !Array.isArray(item)) ? 
+                                           (item["Kode Item"] || item["Kode Barang"]) : item[2];
+                        
+                        if (cadanganKode && cadanganKode !== "-") {
+                            document.getElementById(`kategori_${id}`).value = `${kodeTampil} / ${cadanganKode}`;
+                            kodeItemAsli = cadanganKode; // isi ulang biar input hidden terisi
+                        } else {
+                            // Kalau emang dari database aslinya gaada kode angka, tampilkan apa adanya
+                            document.getElementById(`kategori_${id}`).value = kodeTampil;
+                        }
                     }
-                    document.getElementById(`kategori_${id}`).value = kodeTampil;
-                    document.getElementById(`kode_${id}`).value = kodeItemAsli;
+                    
+                    document.getElementById(`kode_${id}`).value = kodeItemAsli; // Tetap simpan kode asli murni di input hidden
                     document.getElementById(`satuan_${id}`).value = unitTampil;
                     div.style.display = "none";
                 };
@@ -496,7 +513,7 @@
             });
         } else { div.style.display = "none"; }
     }
-
+    
     async function kirimFormBarang() {
         const namaKaryawan = document.getElementById('formNama').value.trim();
         const tanggal = document.getElementById('formTanggal').value;
