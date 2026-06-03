@@ -478,10 +478,15 @@
 
                 let divItem = document.createElement('div');
                 divItem.className = 'suggestion-item';
-                divItem.innerHTML = `<strong>${namaTampil}</strong> <br><small style='color:#007bff; font-weight:bold;'>Kode: ${kodeTampil}</small> <small style='color:#666;'>(${unitTampil})</small>`;
+                divItem.innerHTML = `<strong>${namaTampil}</strong> <br><small style='color:#007bff; font-weight:bold;'>Asset: ${kodeTampil} | KB: ${kodeItemAsli}</small> <small style='color:#666;'>(${unitTampil})</small>`;
                 
                 divItem.onclick = () => {
                     document.getElementById(`namaBarang_${id}`).value = namaTampil;
+                    if (kodeItemAsli && kodeItemAsli !== "-") {
+                        document.getElementById(`kategori_${id}`).value = `${kodeTampil} / ${kodeItemAsli}`;
+                    } else {
+                        document.getElementById(`kategori_${id}`).value = kodeTampil;
+                    }
                     document.getElementById(`kategori_${id}`).value = kodeTampil;
                     document.getElementById(`kode_${id}`).value = kodeItemAsli;
                     document.getElementById(`satuan_${id}`).value = unitTampil;
