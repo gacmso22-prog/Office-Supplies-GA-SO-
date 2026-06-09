@@ -367,7 +367,6 @@
             
             if(data.status === "SUCCESS") {
                 userAktif = data.user; 
-                document.getElementById('formNama').value = userAktif.nama;
                 document.getElementById('bannerEmail').innerText = userAktif.email;
                 document.getElementById('bannerLokasi').innerText = userAktif.lokasi;
                 document.getElementById('formTanggal').valueAsDate = new Date();
